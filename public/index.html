@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Segment Video Creator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Arial', sans-serif; line-height: 1.6; background-color: #f9fafb; }
+    .input-group { @apply mb-4; }
+    .input-field { @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500; }
+    .textarea-field { @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical; }
+    .btn { @apply inline-flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200 ease-in-out; }
+    .btn-green { @apply bg-green-600 hover:bg-green-700 focus:ring-green-500; }
+    .btn-purple { @apply bg-purple-600 hover:bg-purple-700 focus:ring-purple-500; }
+    .btn-yellow { @apply bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400 text-gray-800; }
+    .btn-red { @apply bg-red-600 hover:bg-red-700 focus:ring-red-500; }
+    .btn:disabled { @apply bg-gray-400 cursor-not-allowed; }
+    #status { @apply mt-4 text-lg font-medium; }
+    .hidden { display: none; }
+    .radio-group { @apply mb-4 flex items-center space-x-6; }
+    .radio-option { @apply flex items-center; }
+    .radio-option input[type="radio"] { @apply mr-2 text-blue-600 focus:ring-blue-500; }
+    .radio-option label { @apply text-sm font-medium text-gray-700; }
+    .segment-row { @apply p-4 mb-4 border border-gray-200 rounded-lg bg-gray-50 relative; }
+    .progress-bar { @apply w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700; }
+    .progress-bar-inner { @apply bg-blue-600 h-2.5 rounded-full transition-all duration-500; }
+  </style>
+</head>
+<body class="p-6 max-w-4xl mx-auto">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6">Create Multi-Segment Video</h1>
+
+  <form id="uploadForm" class="bg-white p-6 rounded-lg shadow-md mb-6">
+
+    <!-- Audio Source Selection -->
+    <div class="radio-group">
+        <label class="block text-sm font-medium text-gray-700 mr-4">Audio Source:</label>
+        <div class="radio-option"> <input type="radio" id="sourceUpload" name="audioSource" value="upload" checked> <label for="sourceUpload">Upload File</label> </div>
+        <div class="radio-option"> <input type="radio" id="sourceUrl" name="audioSource" value="url"> <label for="sourceUrl">Enter URL</label> </div>
+    </div>
+    <div id="audioUploadContainer" class="input-group">
+      <label for="audio" class="block text-sm font-medium text-gray-700 mb-1">Audio File:</label>
+      <input type="file" id="audio" name="audio" accept="audio/*" required class="input-field">
+    </div>
+    <div id="audioUrlContainer" class="input-group hidden">
+        <label for="audioUrl" class="block text-sm font-medium text-gray-700 mb-1">Audio URL:</label>
+        <input type="text" id="audioUrl" name="audioUrl" placeholder="e.g., https://example.com/audio.mp3" class="input-field">
+    </div>
+    
+    <hr class="my-6 border-gray-300" />
+
+    <!-- Common Text Fields -->
+    <h2 class="text-xl font-semibold text-gray-700 mb-3">Common Video Details</h2>
+    <div class="input-group">
+      <label for="seriesTitle" class="block text-sm font-medium text-gray-700 mb-1">Series Title:</label>
+      <input type="text" id="seriesTitle" name="seriesTitle" required class="input-field">
+    </div>
+    <div class="input-group">
+      <label for="mainTitle" class="block text-sm font-medium text-gray-700 mb-1">Main Title:</label>
+      <input type="text" id="mainTitle" name="mainTitle" required class="input-field">
+    </div>
+    <div class="input-group">
+        <label for="speaker" class="block text-sm font-medium text-gray-700 mb-1">Speaker:</label>
+        <input type="text" id="speaker" name="speaker" required class="input-field">
+    </div>
+
+    <hr class="my-6 border-gray-300" />
+
+    <!-- Dynamic Time Segments Section -->
+    <div class="flex justify-between items-center mb-3">
+        <h2 class="text-xl font-semibold text-gray-700">Time Segments & Text Boxes</h2>
+        <button type="button" id="addSegmentBtn" class="btn btn-green py-1 px-4 text-sm">Add Segment</button>
+    </div>
+    <div id="timeSegmentsContainer">
+      <div class="segment-row">
+        <button type="button" class="remove-segment-btn btn btn-red absolute top-2 right-2 text-xs w-6 h-6 p-0 leading-none flex items-center justify-center">X</button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="input-group md:mb-0">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Start Time (sec):</label>
+              <input type="number" data-role="startTime" required step="0.1" min="0" value="0" class="input-field">
+            </div>
+            <div class="input-group">
+              <label class="block text-sm font-medium text-gray-700 mb-1">End Time (sec):</label>
+              <input type="number" data-role="endTime" required step="0.1" min="0" class="input-field">
+            </div>
+        </div>
+        <div class="input-group mb-0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Extra Text (for this segment, optional):</label>
+          <textarea data-role="extraText" rows="3" placeholder="Text for this segment's box..." class="textarea-field"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn w-full mt-6">Generate Video</button>
+  </form>
+
+  <!-- Status Area -->
+  <div id="statusArea" class="hidden bg-white p-6 rounded-lg shadow-md mt-6 text-center">
+    <div id="status" class="text-lg font-medium text-gray-800"></div>
+    <div id="progressBarContainer" class="mt-4 hidden">
+        <div class="progress-bar">
+            <div id="progressBarInner" class="progress-bar-inner" style="width: 0%"></div>
+        </div>
+    </div>
+  </div>
+
+  <!-- Output Area -->
+  <div id="outputArea" class="hidden bg-white p-6 rounded-lg shadow-md mt-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Generated Video</h2>
+      <video id="videoPlayer" controls class="w-full max-h-[500px] mb-4 rounded-md shadow-md bg-black"></video>
+      <div class="flex flex-wrap gap-4">
+          <a id="downloadLink" class="btn btn-green" href="#" download>Download Video</a>
+          <button id="shareLink" class="btn btn-purple">Share Video</button>
+          <button id="copyUrlButton" class="btn btn-yellow">Copy Video URL</button>
+      </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const uploadForm = document.getElementById('uploadForm');
+        const submitButton = uploadForm.querySelector('button[type="submit"]');
+        
+        // NEW Status and Output elements
+        const statusArea = document.getElementById('statusArea');
+        const statusDiv = document.getElementById('status');
+        const progressBarContainer = document.getElementById('progressBarContainer');
+        const progressBarInner = document.getElementById('progressBarInner');
+        const outputArea = document.getElementById('outputArea');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const downloadLink = document.getElementById('downloadLink');
+        const shareLinkButton = document.getElementById('shareLink');
+        const copyUrlButton = document.getElementById('copyUrlButton');
+
+        // Other form elements (no changes)
+        const audioSourceRadios = document.querySelectorAll('input[name="audioSource"]');
+        const audioUploadContainer = document.getElementById('audioUploadContainer');
+        const audioUrlContainer = document.getElementById('audioUrlContainer');
+        const audioFileInput = document.getElementById('audio');
+        const audioUrlInput = document.getElementById('audioUrl');
+        const segmentsContainer = document.getElementById('timeSegmentsContainer');
+        const addSegmentBtn = document.getElementById('addSegmentBtn');
+
+        // Logic for toggling audio source (no changes)
+        function showSelectedInput() { /* ... unchanged ... */ }
+        audioSourceRadios.forEach(radio => radio.addEventListener('change', showSelectedInput));
+        showSelectedInput();
+
+        // Logic for adding/removing segments (no changes)
+        addSegmentBtn.addEventListener('click', () => { /* ... unchanged ... */ });
+        segmentsContainer.addEventListener('click', (e) => { /* ... unchanged ... */ });
+
+        // ######################################################################
+        // ###              UPDATED SECTION: Form Submission & Polling        ###
+        // ######################################################################
+        
+        // This variable will hold the timer for polling
+        let pollingInterval = null;
+
+        function resetUI() {
+            statusArea.classList.add('hidden');
+            outputArea.classList.add('hidden');
+            statusDiv.textContent = '';
+            statusDiv.className = 'text-lg font-medium text-gray-800';
+            progressBarContainer.classList.add('hidden');
+            progressBarInner.style.width = '0%';
+            submitButton.disabled = false;
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        function displayFinalResult(result) {
+            statusDiv.textContent = result.cached ? 'Video found in cache!' : 'Video created successfully!'; 
+            statusDiv.className = `text-lg font-medium ${result.cached ? 'text-purple-600' : 'text-green-600'}`;
+            progressBarContainer.classList.add('hidden');
+
+            const videoUrl = result.videoUrl;
+            videoPlayer.src = videoUrl;
+            outputArea.classList.remove('hidden');
+            downloadLink.href = videoUrl;
+            downloadLink.download = videoUrl.split('/').pop();
+            copyUrlButton.onclick = () => navigator.clipboard.writeText(window.location.origin + videoUrl).then(() => alert('URL copied!'));
+            
+            if (navigator.share) {
+                shareLinkButton.classList.remove('hidden');
+                shareLinkButton.onclick = () => navigator.share({ title: 'Generated Video', url: window.location.origin + videoUrl });
+            } else {
+                shareLinkButton.classList.add('hidden');
+            }
+        }
+
+        async function checkJobStatus(jobId) {
+            try {
+                const res = await fetch(`/status/${jobId}`);
+                if (!res.ok) {
+                    throw new Error(`Server responded with status ${res.status}`);
+                }
+                const statusResult = await res.json();
+                
+                statusDiv.textContent = `Processing... (Status: ${statusResult.state})`;
+                
+                // Update progress bar
+                progressBarInner.style.width = `${statusResult.progress || 0}%`;
+
+                if (statusResult.state === 'completed') {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                    submitButton.disabled = false;
+                    displayFinalResult({ videoUrl: statusResult.result, cached: false });
+                } else if (statusResult.state === 'failed') {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                    submitButton.disabled = false;
+                    statusDiv.textContent = `Error: ${statusResult.error || 'Job failed without a specific reason.'}`;
+                    statusDiv.className = 'text-lg font-medium text-red-600';
+                    progressBarContainer.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Polling error:', error);
+                statusDiv.textContent = `Error checking status: ${error.message}`;
+                statusDiv.className = 'text-lg font-medium text-red-600';
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+                submitButton.disabled = false;
+            }
+        }
+
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            resetUI();
+
+            // --- 1. Collect and validate segment data (unchanged) ---
+            const timeSegments = [];
+            const segmentRows = segmentsContainer.querySelectorAll('.segment-row');
+            let formIsValid = true;
+            segmentRows.forEach((row, index) => {
+                const startTimeInput = row.querySelector('[data-role="startTime"]');
+                const endTimeInput = row.querySelector('[data-role="endTime"]');
+                const extraTextInput = row.querySelector('[data-role="extraText"]');
+                const startTime = parseFloat(startTimeInput.value);
+                const endTime = parseFloat(endTimeInput.value);
+                const extraText = extraTextInput.value.trim();
+                if (isNaN(startTime) || isNaN(endTime) || endTime <= startTime) {
+                    statusArea.classList.remove('hidden');
+                    statusDiv.textContent = `Error in Segment #${index + 1}: End Time must be greater than Start Time.`;
+                    statusDiv.className = 'text-lg font-medium text-red-600';
+                    formIsValid = false; return;
+                }
+                timeSegments.push({ startTime, endTime, extraText });
+            });
+            if (!formIsValid) return;
+
+            // --- 2. Prepare FormData (unchanged) ---
+            const data = new FormData();
+            data.append('seriesTitle', document.getElementById('seriesTitle').value);
+            data.append('mainTitle', document.getElementById('mainTitle').value);
+            data.append('speaker', document.getElementById('speaker').value);
+            const selectedSource = document.querySelector('input[name="audioSource"]:checked').value;
+            if (selectedSource === 'upload' && audioFileInput.files.length > 0) {
+                 data.append('audio', audioFileInput.files[0]);
+            } else if (selectedSource === 'url' && audioUrlInput.value.trim() !== '') {
+                 data.append('audioUrl', audioUrlInput.value.trim());
+            } else {
+                 statusArea.classList.remove('hidden');
+                 statusDiv.textContent = `Error: Please provide an audio source.`;
+                 statusDiv.className = 'text-lg font-medium text-red-600';
+                 return;
+            }
+            data.append('timeSegments', JSON.stringify(timeSegments));
+
+            // --- 3. Send Request and Handle Response ---
+            submitButton.disabled = true;
+            statusArea.classList.remove('hidden');
+            statusDiv.textContent = 'Submitting job...';
+            statusDiv.className = 'text-lg font-medium text-blue-600';
+
+            try {
+                const res = await fetch('/create-video', { method: 'POST', body: data });
+                const result = await res.json();
+                
+                if (!res.ok || !result.success) {
+                    throw new Error(result.error || result.details || 'Unknown server error.');
+                }
+
+                // If the video was cached, display it immediately
+                if (result.cached) {
+                    displayFinalResult(result);
+                    submitButton.disabled = false;
+                } 
+                // Otherwise, start polling for the job status
+                else if (result.jobId) {
+                    statusDiv.textContent = 'Job started! Monitoring progress...';
+                    progressBarContainer.classList.remove('hidden');
+                    pollingInterval = setInterval(() => checkJobStatus(result.jobId), 2500); // Check every 2.5 seconds
+                }
+
+            } catch (error) {
+                console.error('Error during video generation submission:', error);
+                statusDiv.textContent = `Error: ${error.message}`;
+                statusDiv.className = 'text-lg font-medium text-red-600';
+                submitButton.disabled = false;
+            }
+        });
+
+        // Unchanged functions for copy/paste
+        function showSelectedInput() {
+            const selectedSource = document.querySelector('input[name="audioSource"]:checked').value;
+            if (selectedSource === 'upload') {
+                audioUploadContainer.classList.remove('hidden'); audioUrlContainer.classList.add('hidden');
+                audioFileInput.disabled = false; audioFileInput.required = true;
+                audioUrlInput.disabled = true; audioUrlInput.required = false; audioUrlInput.value = ''; 
+            } else { 
+                audioUploadContainer.classList.add('hidden'); audioUrlContainer.classList.remove('hidden');
+                audioFileInput.disabled = true; audioFileInput.required = false; 
+                audioUrlInput.disabled = false; audioUrlInput.required = true; audioFileInput.value = ''; 
+            }
+        }
+        addSegmentBtn.addEventListener('click', () => {
+            const newSegment = segmentsContainer.querySelector('.segment-row').cloneNode(true);
+            newSegment.querySelectorAll('input, textarea').forEach(el => el.value = '');
+            segmentsContainer.appendChild(newSegment);
+        });
+        segmentsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-segment-btn')) {
+                if (segmentsContainer.children.length > 1) {
+                    e.target.closest('.segment-row').remove();
+                } else {
+                    alert('You must have at least one segment.');
+                }
+            }
+        });
+    });
+  </script>
+</body>
+</html>
